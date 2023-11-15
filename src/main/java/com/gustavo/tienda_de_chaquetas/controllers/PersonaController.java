@@ -1,15 +1,23 @@
 package com.gustavo.tienda_de_chaquetas.controllers;
 
 import com.gustavo.tienda_de_chaquetas.dao.api.RoleRepository;
+import com.gustavo.tienda_de_chaquetas.dto.LoginDto;
 import com.gustavo.tienda_de_chaquetas.dto.RegisterDto;
 import com.gustavo.tienda_de_chaquetas.model.Persona;
 import com.gustavo.tienda_de_chaquetas.model.Role;
+import com.gustavo.tienda_de_chaquetas.security.CustomUserDetailsService;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -76,6 +84,17 @@ public class PersonaController {
         return mostSignificantBits ^ leastSignificantBits;
     }
 
+/*
+ *  ########  ########  ######   ####  ######  ######## ######## ########  
+    ##     ## ##       ##    ##   ##  ##    ##    ##    ##       ##     ## 
+    ##     ## ##       ##         ##  ##          ##    ##       ##     ## 
+    ########  ######   ##   ####  ##   ######     ##    ######   ########  
+    ##   ##   ##       ##    ##   ##        ##    ##    ##       ##   ##   
+    ##    ##  ##       ##    ##   ##  ##    ##    ##    ##       ##    ##  
+    ##     ## ########  ######   ####  ######     ##    ######## ##     ##
+ */
+
+
     @PostMapping ("register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto){
 
@@ -85,7 +104,9 @@ public class PersonaController {
         ejemploPersona.setCorreo(registerDto.getCorreo());
         Example<Persona> example = Example.of(ejemploPersona);
 
-        if(personaRepository.findOne(example).isPresent()){
+        System.out.println(personaRepository.findByCorreo(registerDto.getCorreo()));
+
+        if(personaRepository.findByCorreo(registerDto.getCorreo()) != null){
             return new ResponseEntity<>("El usuario ya existe", HttpStatus.BAD_REQUEST);
         }
 
@@ -109,6 +130,45 @@ public class PersonaController {
         return new ResponseEntity("User registered success!", HttpStatus.OK);
 
     }
+
+
+/*
+  * ##        #######   ######   #### ##    ## 
+    ##       ##     ## ##    ##   ##  ###   ## 
+    ##       ##     ## ##         ##  ####  ## 
+    ##       ##     ## ##   ####  ##  ## ## ## 
+    ##       ##     ## ##    ##   ##  ##  #### 
+    ##       ##     ## ##    ##   ##  ##   ### 
+    ########  #######   ######   #### ##    ## 
+*/
+
+    @PostMapping("login")
+    public ResponseEntity<String> login(@RequestBody LoginDto loginDto){
+        System.out.println(loginDto);
+
+        CustomUserDetailsService customUserDetailsService = new CustomUserDetailsService(personaRepository);
+
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    loginDto.getCorreo(),
+                    loginDto.getPassword(),
+                    customUserDetailsService.loadUserByUsername(loginDto.getCorreo()).getAuthorities()
+                )
+            );
+
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            return new ResponseEntity("Inicio de Sesión Exitoso!", HttpStatus.OK);
+
+        }catch (Exception e) {
+            // Manejar excepción de autenticación
+            System.err.println("Error en el inicio de sesión para el usuario: " + loginDto.getCorreo() + ". Detalles: " + e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Error en el inicio de sesión: " + e);
+        }
+    }
+
 
     /* @GetMapping("/")
     public String getAll(){

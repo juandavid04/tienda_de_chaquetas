@@ -34,7 +34,7 @@ public class CustomUserDetailsService  implements UserDetailsService {
         ejemploPersona.setCorreo(correo);
         Example<Persona> example = Example.of(ejemploPersona);
 
-        Persona user = personaRepository.findOne(example).orElseThrow(() -> new UsernameNotFoundException("UserEmail not found"));
+        Persona user = personaRepository.findByCorreo(correo);
 
         return new User(user.getCorreo(), user.getPassword(), mapRolesToAuthorities(user.getRoles()) );
     }
