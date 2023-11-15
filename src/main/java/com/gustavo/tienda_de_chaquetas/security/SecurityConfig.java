@@ -32,7 +32,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeRequests()
-            .antMatchers(HttpMethod.GET).permitAll()
+            .antMatchers("/api/auth/**").permitAll()
             .anyRequest().authenticated()
             .and()
             .httpBasic();
@@ -58,10 +58,12 @@ public class SecurityConfig {
         return new InMemoryUserDetailsManager(admin,user);
     }
 
+    @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception{
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+    @Bean
     PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
