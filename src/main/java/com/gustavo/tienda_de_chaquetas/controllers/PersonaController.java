@@ -28,10 +28,14 @@ import com.gustavo.tienda_de_chaquetas.dao.api.PersonaRepository;
 
 //import org.springframework.web.bind.annotation.RestController;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.UUID;
+
+import javax.validation.Valid;
 
 
 @Slf4j
@@ -94,6 +98,24 @@ public class PersonaController {
     ##     ## ########  ######   ####  ######     ##    ######## ##     ##
  */
 
+    @GetMapping("/registro")
+    public String mostrarFormularioRegistro(RegisterDto registerDto) {
+        return "formularioRegistro";
+    }
+
+    @PostMapping("/registro")
+    public String procesarFormularioRegistro(@Valid RegisterDto registerDto, BindingResult result, Model model) {
+        if (result.hasErrors()) {
+            return "formularioRegistro";
+        }
+
+        this.register(registerDto);
+
+        // Lógica para procesar el registro si la validación es exitosa
+
+        return "redirect:/api/auth/login";
+    }
+
 
     @PostMapping ("register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto){
@@ -142,9 +164,18 @@ public class PersonaController {
     ########  #######   ######   #### ##    ## 
 */
 
+    @GetMapping("/login")
+    public String mostrarFormularioLogin(LoginDto loginDto) {
+        return "formularioLogin";
+    }
+
     @PostMapping("login")
-    public ResponseEntity<String> login(@RequestBody LoginDto loginDto){
+    public String login(@Valid LoginDto loginDto, BindingResult result, Model model){
         System.out.println(loginDto);
+
+        if (result.hasErrors()) {
+            return "formularioLogin";
+        }
 
         CustomUserDetailsService customUserDetailsService = new CustomUserDetailsService(personaRepository);
 
@@ -160,14 +191,15 @@ public class PersonaController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            return new ResponseEntity("Inicio de Sesión Exitoso!", HttpStatus.OK);
+            return "redirect:/welcome/index";
 
         }catch (Exception e) {
             // Manejar excepción de autenticación
             System.err.println("Error en el inicio de sesión para el usuario: " + loginDto.getCorreo() + ". Detalles: " + e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Error en el inicio de sesión: " + e);
+            return "formularioLogin";
         }
     }
+
 
 
     /* @GetMapping("/")
